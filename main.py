@@ -2,13 +2,13 @@ from drafter import *
 from dataclasses import dataclass
 from random import randint
 
-set_website_title("Water Treatment Process")
+set_website_title("Water Treatment Processes")
 set_site_information(
     author="Lillian Emerson",
     description="See overviews of different water treatment processes.",
-    sources="Thanks to the Drafter docs.",
-    planning=["plan.pdf", "design.pdf"],
-    links=["https://github.com/your-username/your-repository"]
+    sources="Thanks to the Drafter docs and the design worksheet.",
+    planning=["Lily Emerson - CS1 Final Project 0_ Pick a Problem.pdf", "Lily Emerson - CS1 Final Project 1_Design.pdf"],
+    links=["https://github.com/lilyeme-423/Water-treatment-processes-overview"]
 )
 hide_debug_information()
 set_website_framed(False)
