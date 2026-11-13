@@ -2,6 +2,10 @@ from drafter import *
 from dataclasses import dataclass
 from random import randint
 
+#OVERALL NOTES FOR LATER - fun fact function?? so state dataclass needs to track where the program is in the process
+# and have a return to start function that sets that back to the start so we can cycle through this
+#page with list of processes incase they wanted to review/learn more -> incorporate fun fact function into this?
+
 set_website_title("Water Treatment Processes")
 set_site_information(
     author="Lillian Emerson",
@@ -13,6 +17,7 @@ set_site_information(
 hide_debug_information()
 set_website_framed(False)
 
+
 @dataclass
 class Process:
     name: str
@@ -22,28 +27,26 @@ class Process:
 
 @dataclass
 class State:
+    processlookup: str
     #groundwater stuff
     testingfor: str
     chemcontaminant: str
     #surfacewater stuff
     filtertype: str
+    processes: list[Process]
     
-surfaceprocess = [Process("Coagulation", "Chemicals are added to water to help bind together dirt and other small particles.", "surface", 1),
+allprocesses = [Process("Coagulation", "Chemicals are added to water to help bind together dirt and other small particles.", "surface", 1),
                   Process("Flocculation", "The mixing of water to help form larger particles, Chemicals often added to help this.", "surface", 2),
                   Process("Sedimentation", "Separates out solids from water", "surface.", 3),
                   Process("Filtration", "Different pore sized filters are used to remove germs and dissolved particles.", "surface", 4),
-                  Process("Disinfection", "Either UV light or chemical disinfectants used to kill any remaining germs.", "surface", 5)
+                  Process("Disinfection", "Either UV light or chemical disinfectants used to kill any remaining germs.", "surface", 5),
+                  Process("Testing", "Tests for Iron and Manganese, Arsenic, and Hydrogen Sulfide most commonly.", "ground", 1),
+                  Process("Chemical Treatment", "Removes chemical contaminants from groundwater.", "ground", 2),
+                  Process("Stabilization", "pH gets adjusted by the addition of chemicals to optimal levels.", "ground", 3),
+                  Process("1st Removal", "Removes trash and particles, and 99% of germs.", "waste", 1),
+                  Process("Chemical Removal", "Removes harmful chemicals and improves taste and smell of water.", "waste", 2),
+                  Process("Environmental Buffer", "Blended with other water sources, like a reservoir.", "waste", 3)
                   ]
-
-groundprocess = [Process("Testing", "Tests for Iron and Manganese, Arsenic, and Hydrogen Sulfide most commonly.", "ground", 1),
-                 Process("Chemical Treatment", "Removes chemical contaminants from groundwater.", "ground", 2),
-                 Process("Stabilization", "pH gets adjusted by the addition of chemicals to optimal levels.", "ground", 3)
-                 ]
-
-wasteprocess = [Process("1st Removal", "Removes trash and particles, and 99% of germs.", "waste", 1),
-                     Process("Chemical Removal", "Removes harmful chemicals and improves taste and smell of water.", "waste", 2),
-                     Process("Environmental Buffer", "Blended with other water sources, like a reservoir.", "waste", 3)
-                     ]
 
 groundwatercontaminants = ["Iron and Manganese", "Arsenic", "Hydrogen Sulfide"]
 
@@ -52,20 +55,103 @@ def contaminant_picker(contaminants:list[str]) -> str:
     chem_contmnt = contaminants[indexnum]
     return chem_contmnt
 
-State.chemcontaminant = contaminant_picker(groundwatercontaminants)
-
 #STARTPAGE
 @route
 def index(state:State) -> Page:
+    state.chemcontaminant = contaminant_picker(groundwatercontaminants)
+    state.processes = allprocesses
     return Page(state, [
         Header("Water Treatment Processes!"),
         "Welcome! By clicking one of these 3 buttons you can see an overview of how water from different sources gets treated! \n",
+        Button("Process info", "processinfo"),
         Button("Groundwater", "groundwater"),
         Button("Surface Water", 'surfacewater'),
         Button("Wastewater", 'wastewater')
             ])
 
-#smth wrong with if statements or state attribute updates (idontfeelliketracingthroughitrn)
+
+#dictionary typa thing part
+def get_process_description(processes: list[Process], stepname:str) -> str:
+    found = 'none'
+    for process in processes:
+        if process.name == stepname:
+            found = process.defn
+    return found
+
+def only1process(processes: list[Process], originname:str) -> list[Process]:
+    originnameprocesses = []
+    for process in processes:
+        if originname == process.waterorigin:
+            originnameprocesses.append(process)
+    return originnameprocesses
+
+@route
+def processinfo(state:State) -> Page:
+    state.processlookup = "start"
+    return Page(state, [
+        Header("Welcome to the Info Page!"),
+        Button("Groundwater info", "groundinfo"),
+        Button("Surface Water info", "surfaceinfo"),
+        Button("Wastewater info", "wasteinfo")
+        ])
+
+gprocess = only1process(allprocesses, "ground")
+sprocess = only1process(allprocesses, "surface")
+wprocess = only1process(allprocesses, "waste")
+
+@route
+def groundinfo(state:State) -> Page:
+    state.processes = gprocess
+    content = [
+        Header("Welcome to the Info Page!"),
+        "what groundwater step's info would you like to see?\n",
+        SelectBox("select",
+                  ["start", "Testing", "Chemical Treatment", "Stabilization"],
+                  state.processlookup),
+        Button("Choose step", "choosestep")
+        ]
+    return Page(state, content)
+    
+@route
+def choosestep(state:State, select:str) -> Page:
+    state.processlookup = select
+    content = [
+        Header(state.processlookup),
+        get_process_description(allprocesses, state.processlookup) + "\n",
+        Button("Back to info page", "processinfo"),
+        Button("Return to Start", "startpage")
+        ]
+    return Page(state, content)
+
+@route
+def surfaceinfo(state:State) -> Page:
+    state.processes = sprocess
+    content = [
+        Header("Welcome to the Info Page!"),
+        "what surface water step's info would you like to see?\n",
+        SelectBox("select",
+                  ["start", "Coagulation", "Flocculation", "Sedimentation", "Filtration", "Disinfection"],
+                  state.processlookup),
+        Button("Choose step", "choosestep")
+        ]
+    return Page(state, content)
+
+@route
+def wasteinfo(state:State) -> Page:
+    state.processes = sprocess
+    content = [
+        Header("Welcome to the Info Page!"),
+        "what wastewater step's info would you like to see?\n",
+        SelectBox("select",
+                  ["start", "1st removal", "Chemical Removal", "Environmental Buffer"],
+                  state.processlookup),
+        Button("Choose step", "choosestep")
+        ]
+    return Page(state, content)
+
+
+#GROUNDWATER SECTION - problems: wont go past chem treatment gets stuck in loop
+#smth wrong with if statements or state attribute updates
 @route
 def groundwater(state:State) -> Page:
     return Page(state, [
@@ -293,7 +379,6 @@ def filtration(state:State) -> Page:
         ]
     return Page(state, content)
 
-#this need linked in helper functions, and needs figureing out text box
 @route
 def filter(state:State) -> Page:
     content = [
@@ -308,17 +393,46 @@ def filter(state:State) -> Page:
 
 @route
 def submit(state:State, filter_:str) -> Page:
-    state.filtertype = filter_.lower()
+    lowercase = filter_.lower()
+    state.filtertype = lowercase.strip()
     if state.filtertype == "sand":
-        pass
+        content = [
+            Header("Welcome to Filtration!"),
+            "in this step different pore sized filters are used to remove germs and dissolved particles. \n",
+            "There are 3 different filters commonly used in this step, and they are sand, gravel, and activated carbon filters. \n",
+            "Good Job! You completed the surface water treatment process! you filtered through the sand filter, then gravel, then activated carbon!\n",
+            Button("Return to Start", "startpage")
+            ]
+        return Page(state, content)
     if state.filtertype == "gravel":
-        pass
+        content = [
+            Header("Welcome to Filtration!"),
+            "in this step different pore sized filters are used to remove germs and dissolved particles. \n",
+            "There are 3 different filters commonly used in this step, and they are sand, gravel, and activated carbon filters. \n",
+            "Good Job! You completed the surface water treatment process! you filtered through the gravel filter, then sand, then activated carbon!\n",
+            Button("Return to Start", "startpage")
+            ]
+        return Page(state, content)
     if state.filtertype == "activated carbon":
-        pass
+        content = [
+            Header("Welcome to Filtration!"),
+            "in this step different pore sized filters are used to remove germs and dissolved particles. \n",
+            "There are 3 different filters commonly used in this step, and they are sand, gravel, and activated carbon filters. \n",
+            "Good Job! You completed the surface water treatment process! you filtered through the activated carbon filter, then sand, then gravel!\n",
+            Button("Return to Start", "startpage")
+            ]
+        return Page(state, content)
     else:
-        return "something doesnt look quite right. Please try again!"
-    
-
+        content = [
+            Header("Welcome to Filtration!"),
+            "in this step different pore sized filters are used to remove germs and dissolved particles. \n",
+            "There are 3 different filters commonly used in this step, and they are sand, gravel, and activated carbon filters. \n",
+            "something doesnt look quite right. Please try again!\n",
+            TextBox("filter_", state.filtertype),
+            Button("Submit", "submit")
+            ]
+        return Page(state, content)
+         
 
 #WASTEWATER SECTION
 @route
@@ -394,5 +508,4 @@ def choose(state:State, choice:str) -> Page:
 def startpage(state:State) -> Page:
     return index(state)
 
-start_server(State("unknown","unknown","unknown"))
-
+start_server(State("start","unknown","unknown", "unknown", allprocesses))
