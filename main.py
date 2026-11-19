@@ -6,6 +6,8 @@ from random import randint
 # and have a return to start function that sets that back to the start so we can cycle through this
 #page with list of processes incase they wanted to review/learn more -> incorporate fun fact function into this?
 
+set_website_style("pico")
+
 set_website_title("Water Treatment Processes")
 set_site_information(
     author="Lillian Emerson",
